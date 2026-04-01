@@ -2,12 +2,14 @@ import { useState } from "react";
 import {
   LayoutDashboard,
   ArrowLeftRight,
-  Settings,
   ChevronLeft,
   ChevronRight,
+  Shield,
+  Eye,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { roles, Role } from "@/data/mockData";
+import { Role } from "@/data/mockData";
+import { useAppState } from "@/context/AppContext";
 import {
   Select,
   SelectContent,
@@ -19,16 +21,22 @@ import {
 const navItems = [
   { label: "Dashboard", to: "/", icon: LayoutDashboard },
   { label: "Transactions", to: "/transactions", icon: ArrowLeftRight },
-  { label: "Settings", to: "/settings", icon: Settings },
 ];
+
+const roleIcons: Record<string, typeof Shield> = {
+  Admin: Shield,
+  Viewer: Eye,
+};
 
 export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const [role, setRole] = useState<Role>("Admin");
+  const { role, setRole } = useAppState();
+
+  const RoleIcon = roleIcons[role] || Shield;
 
   return (
     <aside
-      className={`flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-200 ${
+      className={`hidden md:flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-200 shrink-0 ${
         collapsed ? "w-16" : "w-56"
       }`}
     >
@@ -61,23 +69,26 @@ export default function AppSidebar() {
         ))}
       </nav>
 
-      {!collapsed && (
-        <div className="p-3 border-t border-sidebar-border">
-          <label className="text-xs text-sidebar-muted mb-1 block">Role</label>
-          <Select value={role} onValueChange={(v) => setRole(v as Role)}>
-            <SelectTrigger className="h-8 bg-sidebar-accent border-sidebar-border text-sidebar-accent-foreground text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {roles.map((r) => (
-                <SelectItem key={r} value={r} className="text-xs">
-                  {r}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      <div className="p-3 border-t border-sidebar-border">
+        {collapsed ? (
+          <div className="flex justify-center">
+            <RoleIcon size={18} className="text-sidebar-muted" />
+          </div>
+        ) : (
+          <>
+            <label className="text-xs text-sidebar-muted mb-1 block">Role</label>
+            <Select value={role} onValueChange={(v) => setRole(v as Role)}>
+              <SelectTrigger className="h-8 bg-sidebar-accent border-sidebar-border text-sidebar-accent-foreground text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Admin" className="text-xs">Admin</SelectItem>
+                <SelectItem value="Viewer" className="text-xs">Viewer</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        )}
+      </div>
     </aside>
   );
 }

@@ -64,5 +64,5 @@ export const balanceTrend = [
   { month: "Mar", balance: 16480 },
 ];
 
-export const roles = ["Admin", "Manager", "Viewer"] as const;
+export const roles = ["Admin", "Viewer"] as const;
 export type Role = (typeof roles)[number];

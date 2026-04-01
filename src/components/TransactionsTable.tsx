@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
-import { ArrowUpDown, Search } from "lucide-react";
-import { Transaction, categories } from "@/data/mockData";
+import { ArrowUpDown, Search, Pencil, FileX } from "lucide-react";
+import { Transaction, categories, Category, TransactionType } from "@/data/mockData";
 import { formatCurrency } from "@/utils/finance";
+import { useAppState } from "@/context/AppContext";
+import TransactionForm from "@/components/TransactionForm";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -19,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 type SortKey = "date" | "amount";
 type SortDir = "asc" | "desc";
@@ -28,11 +31,13 @@ interface Props {
 }
 
 export default function TransactionsTable({ data }: Props) {
+  const { isAdmin } = useAppState();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -78,7 +83,7 @@ export default function TransactionsTable({ data }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative flex-1 min-w-[180px]">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search transactions..."
@@ -88,7 +93,7 @@ export default function TransactionsTable({ data }: Props) {
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-40 h-9">
+          <SelectTrigger className="w-36 h-9">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
@@ -99,7 +104,7 @@ export default function TransactionsTable({ data }: Props) {
           </SelectContent>
         </Select>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-32 h-9">
+          <SelectTrigger className="w-28 h-9">
             <SelectValue placeholder="Type" />
           </SelectTrigger>
           <SelectContent>
@@ -110,26 +115,31 @@ export default function TransactionsTable({ data }: Props) {
         </Select>
       </div>
 
-      <div className="rounded-lg border border-border overflow-hidden">
+      <div className="rounded-lg border border-border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="w-[120px]">
+              <TableHead className="w-[110px]">
                 <SortButton label="Date" field="date" />
               </TableHead>
               <TableHead>Description</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Type</TableHead>
+              <TableHead className="hidden sm:table-cell">Category</TableHead>
+              <TableHead className="hidden sm:table-cell">Type</TableHead>
               <TableHead className="text-right">
                 <SortButton label="Amount" field="amount" />
               </TableHead>
+              {isAdmin && <TableHead className="w-[60px]" />}
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                  No transactions found.
+                <TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-12">
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <FileX size={32} />
+                    <p className="text-sm">No transactions found.</p>
+                    <p className="text-xs">Try adjusting your filters or search term.</p>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
@@ -137,12 +147,12 @@ export default function TransactionsTable({ data }: Props) {
                 <TableRow key={t.id}>
                   <TableCell className="text-sm">{t.date}</TableCell>
                   <TableCell className="text-sm font-medium">{t.description}</TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <Badge variant="secondary" className="text-xs font-normal">
                       {t.category}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <Badge
                       variant={t.type === "income" ? "default" : "outline"}
                       className="text-xs capitalize"
@@ -157,6 +167,19 @@ export default function TransactionsTable({ data }: Props) {
                   >
                     {t.type === "income" ? "+" : "-"}{formatCurrency(t.amount)}
                   </TableCell>
+                  {isAdmin && (
+                    <TableCell>
+                      <TransactionForm
+                        editId={t.id}
+                        editData={{ date: t.date, description: t.description, amount: t.amount, category: t.category, type: t.type }}
+                        trigger={
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <Pencil size={14} />
+                          </Button>
+                        }
+                      />
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}

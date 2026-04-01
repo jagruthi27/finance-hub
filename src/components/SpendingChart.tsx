@@ -1,3 +1,5 @@
+import { useAppState } from "@/context/AppContext";
+import { getSpendingByCategory } from "@/utils/finance";
 import {
   BarChart,
   Bar,
@@ -8,8 +10,6 @@ import {
   Cell,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getSpendingByCategory } from "@/utils/finance";
-import { transactions } from "@/data/mockData";
 
 const COLORS = [
   "hsl(220 70% 50%)",
@@ -23,7 +23,18 @@ const COLORS = [
 ];
 
 export default function SpendingChart() {
+  const { transactions } = useAppState();
   const data = getSpendingByCategory(transactions);
+
+  if (data.length === 0) {
+    return (
+      <Card className="shadow-sm">
+        <CardContent className="p-5 flex items-center justify-center h-64 text-muted-foreground text-sm">
+          No spending data available.
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="shadow-sm">
